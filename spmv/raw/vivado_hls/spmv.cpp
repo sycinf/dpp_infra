@@ -10,7 +10,7 @@ void spmv(volatile float *y, volatile int* ptr, volatile float* valArray,
                 int kend = ptr[s];
                 int k;
                 float curY = y[s];
-                for(k = kbegin; k<kend; k++)
+                spmv_label0:for(k = kbegin; k<kend; k++)
                 {
                         int curInd = indArray[k];
                         curY = curY + valArray[k]* xvec[curInd];
