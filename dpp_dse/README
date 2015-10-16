@@ -1,0 +1,8 @@
+The dse is structured as follows
+./scripts ---- infrastructure script for constructing projects and running them
+./tests   ---- benchmarks/test circuits compiled
+   under each benchmark, there is a xml file describing the things need to be done
+   for generating that particular benchmark, realize the input is always a bunch of
+   c files
+   in the case of a naive implementation, the benchmark describes path to the benchmarked
+   function, the initialization stub 
