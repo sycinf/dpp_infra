@@ -4,7 +4,7 @@ set_property board_part em.avnet.com:zed:part0:1.3 [current_project]
 add_files -norecurse $histo_common_anc_dir/src/FIFO_read_conn.v
 update_compile_order -fileset sources_1
 update_compile_order -fileset sim_1
-ipx::package_project -root_dir $histo_common_anc_dir/ip_depo -vendor WireleSuns -library user -taxonomy /UserIP -force
+ipx::package_project -root_dir $histo_common_anc_dir/ip_depo/FIFO_read_conn -vendor WireleSuns -library user -taxonomy /UserIP -force
 set_property core_revision 1 [ipx::current_core]
 ipx::add_bus_interface read_from_fifo_rtl [ipx::current_core]
 set_property abstraction_type_vlnv xilinx.com:interface:fifo_read_rtl:1.0 [ipx::get_bus_interfaces read_from_fifo_rtl -of_objects [ipx::current_core]]
@@ -28,5 +28,5 @@ set_property physical_name empty_n [ipx::get_port_maps EMPTY_N -of_objects [ipx:
 ipx::create_xgui_files [ipx::current_core]
 ipx::update_checksums [ipx::current_core]
 ipx::save_core [ipx::current_core]
-set_property  ip_repo_paths  $histo_common_anc_dir/ip_depo [current_project]
+set_property  ip_repo_paths  $histo_common_anc_dir/ip_depo/FIFO_read_conn [current_project]
 update_ip_catalog
