@@ -10,26 +10,38 @@ import shutil
 def getPerFuncInfo(inCpp):
     funcName2Everything={}
     pattern = re.compile('\W*FUNCBEGIN:(.*)',re.I)
+    fifoSecPattern = re.compile('\W*FIFOBEGIN:(.*)',re.I);
+    fifoInfo=[]
     curFuncInfo = []
     prevFuncName = ""
     parsingStarted =  False
+    parsingFifoStarted = False
     for line in inCpp:
         line = line.rstrip()
         matchName = pattern.match(line)
+        matchFifo = fifoSecPattern.match(line)
         if matchName:
             parsingStarted = True
+            parsingFifoStarted = False
             funcName = matchName.group(1)
             if prevFuncName != "":
                 prevFuncInfo = curFuncInfo[:]
                 funcName2Everything[prevFuncName] = prevFuncInfo
                 curFuncInfo=[]
             prevFuncName = funcName
-
         if parsingStarted:
             curFuncInfo.append(line)
+
+        if matchFifo:
+            parsingStarted = False
+            parsingFifoStarted = True
+        if parsingFifoStarted:
+            fifoInfo.append(line)
+                        
+        # if we see the fifo begin tag, we need to 
     # the last bunch of things
     funcName2Everything[prevFuncName] =  curFuncInfo
-    return funcName2Everything
+    return (funcName2Everything, fifoInfo)
 # this we break the info into portions
 # #FUNCTCLBEGIN: --- #FUNCTCLEND
 #   this is the tcl for generating hls cores
@@ -87,7 +99,15 @@ def dumpToFile(linesInfo, outfile):
     for line in linesInfo:
         outfile.write(line)
         outfile.write("\n")
-
+def cleanFifoInstantiation(fifoInstantiation):
+    cleaned = []
+    fifoSecPattern = re.compile('\W*FIFOBEGIN:(.*)',re.I);
+    fifoSecPattern2 = re.compile('\W*FIFOEND:(.*)',re.I);
+    for line in fifoInstantiation:
+        if not (fifoSecPattern.match(line) or fifoSecPattern2.match(line)):
+            cleaned.append(line)
+    return cleaned
+    
 
 def main():
     parser = argparse.ArgumentParser(description='supply filename to parse and the output root dir')
@@ -97,7 +117,8 @@ def main():
 
     inCpp = open(args.infileName,"r")
     outDir = args.outdirName
-    funcName2Info = getPerFuncInfo(inCpp)
+    funcName2Info,fifoInstantiation = getPerFuncInfo(inCpp)
+    fifoInstantiation = cleanFifoInstantiation(fifoInstantiation)
     retDir = os.getcwd()
     os.chdir(outDir)
     toRemove = glob(outDir+'/*')
@@ -128,7 +149,7 @@ def main():
         if not topLevel:
             os.mkdir(vivadoHLSDir+'/'+key)
             curBaseDir=vivadoHLSDir+'/'+key
-        funcTclFile = open(curBaseDir+'/'+'run.tcl','w')
+        funcTclFile = open(curBaseDir+'/'+'run.tcl','a')
         dumpToFile(functionTcl, funcTclFile)
         if not topLevel:
             directiveTclFile = open(curBaseDir+'/'+'directive.tcl','w')
@@ -139,9 +160,17 @@ def main():
             dumpToFile(driverC,completeDriverFile)
         else:
             topLevelDriver.extend(functionContent)
+            dumpToFile(fifoInstantiation,funcTclFile)
     dumpToFile(topLevelDriver,completeDriverFile)
-
-
+    # go into each vivado_hls dir and invoke vivado_hls
+    os.chdir(retDir)
+    toSynthesize = glob(vivadoHLSDir+'/*')
+    for curSyn in toSynthesize:
+        os.chdir(curSyn)
+        os.system("vivado_hls -f run.tcl")
+        os.chdir(retDir)
+    print toSynthesize    
+            
     print 'done'
 
 
